@@ -1,26 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'package:aquanest/providers/aquarium_provider.dart';
-import 'package:aquanest/screens/dashboard_screen.dart';
 
-void main() {
+import 'providers/aquarium_provider.dart';
+import 'screens/login_screen.dart';
+import 'screens/dashboard_screen.dart';
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // TODO: Firebase.initializeApp() call will be added after flutterfire configure
-  runApp(const AquaNestApp());
+  await Firebase.initializeApp();
+  runApp(const MyApp());
 }
 
-class AquaNestApp extends StatelessWidget {
-  const AquaNestApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AquariumProvider(),
+    return MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => AquariumProvider())],
       child: MaterialApp(
-        title: 'AquaNest',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(primarySwatch: Colors.teal, useMaterial3: true),
-        home: const DashboardScreen(),
+        title: 'AquaNest',
+        initialRoute: '/login',
+        routes: {
+          '/login': (context) => const LoginScreen(),
+          '/dashboard': (context) => const DashboardScreen(),
+        },
       ),
     );
   }

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "443051224540",
+    "project_id": "aquanest-6379c",
+    "storage_bucket": "aquanest-6379c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:443051224540:android:f284f07983c95a0eb5b319",
+        "android_client_info": {
+          "package_name": "com.example.aquanest"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAH_WCMTMAWiCI2AoemKrySkKqLBpYNvAU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
