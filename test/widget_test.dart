@@ -1,30 +1,30 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:aquanest/theme/app_theme.dart';
 
-import 'package:aquanest/main.dart';
-
+// NOTE: This project's default `flutter create` counter test referenced a
+// nonexistent `MyApp` class and tapped a '+' button that doesn't exist in
+// AquaNest — that template is unrelated to this app and was deleted.
+//
+// Testing AquaNestApp's full widget tree isn't a simple pumpWidget() call:
+// AuthProvider/AquariumProvider/etc. construct FirebaseService, which
+// touches FirebaseFirestore.instance and FirebaseAuth.instance immediately
+// on creation. Those throw in a plain widget test unless Firebase is
+// mocked first via `setupFirebaseCoreMocks()` (package: firebase_core
+// dev dependency `firebase_core_platform_interface`, plus fake_cloud_firestore
+// / firebase_auth_mocks for the Firestore/Auth calls themselves).
+//
+// This smoke test keeps `flutter test` passing with something real rather
+// than a token test — it exercises the app's design tokens, which don't
+// depend on Firebase. If you want proper widget tests that actually pump
+// screens (e.g. verifying LoginScreen shows an error on bad credentials),
+// tell me and I'll wire up the Firebase mocks — it's a real chunk of setup,
+// not a one-line addition.
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  test('AppTheme exposes the expected dark-theme background color', () {
+    expect(AppTheme.dark.scaffoldBackgroundColor, AppColors.background);
+  });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  test('AppColors.neonCyan matches the design system spec (#00E5FF)', () {
+    expect(AppColors.neonCyan.value, 0xFF00E5FF);
   });
 }
