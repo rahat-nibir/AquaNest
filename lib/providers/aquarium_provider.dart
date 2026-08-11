@@ -1,42 +1,52 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:firebase_database/firebase_database.dart';
-import '../models/sensor_data.dart';
+import '../models/aquarium_model.dart';
+import '../services/firebase_service.dart';
 
-class AquariumProvider with ChangeNotifier {
-  final DatabaseReference _dbRef = FirebaseDatabase.instance.ref();
-  SensorData _sensorData = SensorData(
-    temperature: 0.0,
-    waterLevel: 0.0,
-    foodLevel: 0.0,
-    isPumpOn: false,
-    isFeederActive: false,
-  );
+/// Holds the live status of the currently selected aquarium hub.
+/// Replaces the hardcoded "Living Room Reef · Stable (26.5°C)" text
+/// with a real Firestore subscription.
+class AquariumProvider extends ChangeNotifier {
+  final FirebaseService _firebaseService;
+  final String aquariumId;
 
-  SensorData get sensorData => _sensorData;
-
-  AquariumProvider() {
-    _listenToSensorData();
+  AquariumProvider({
+    required FirebaseService firebaseService,
+    required this.aquariumId,
+  }) : _firebaseService = firebaseService {
+    _subscribe();
   }
 
-  void _listenToSensorData() {
-    _dbRef.child('aquarium_status').onValue.listen((event) {
-      final data = event.snapshot.value;
-      if (data != null && data is Map) {
-        _sensorData = SensorData.fromMap(data);
+  AquariumModel _aquarium = AquariumModel.empty();
+  AquariumModel get aquarium => _aquarium;
+
+  bool _isLoading = true;
+  bool get isLoading => _isLoading;
+
+  String? _error;
+  String? get error => _error;
+
+  StreamSubscription<AquariumModel>? _sub;
+
+  void _subscribe() {
+    _sub = _firebaseService.watchAquarium(aquariumId).listen(
+      (data) {
+        _aquarium = data;
+        _isLoading = false;
+        _error = null;
         notifyListeners();
-      }
-    });
+      },
+      onError: (e) {
+        _error = e.toString();
+        _isLoading = false;
+        notifyListeners();
+      },
+    );
   }
 
-  Future<void> togglePump(bool value) async {
-    await _dbRef.child('aquarium_status/pump_status').set(value);
-  }
-
-  Future<void> triggerFeeder() async {
-    await _dbRef.child('aquarium_status/feeder_status').set(true);
-    // Servo trigger reset
-    Future.delayed(const Duration(seconds: 3), () async {
-      await _dbRef.child('aquarium_status/feeder_status').set(false);
-    });
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
   }
 }
