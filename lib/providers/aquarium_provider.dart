@@ -44,6 +44,30 @@ class AquariumProvider extends ChangeNotifier {
     );
   }
 
+  /// Requests an immediate feed via the command pattern in
+  /// FirebaseService. Does not optimistically update local state — the
+  /// Firestore listener above (and the feedingHistory stream in
+  /// ScheduleProvider) are the sources of truth once the hub confirms.
+  Future<void> sendManualFeed() {
+    return _firebaseService.sendFeedCommand(aquariumId);
+  }
+
+  Future<void> recordWaterChange() {
+    return _firebaseService.recordWaterChange(aquariumId);
+  }
+
+  Future<void> acknowledgeMissedFeedings() {
+    return _firebaseService.acknowledgeMissedFeedings(aquariumId);
+  }
+
+  Future<void> toggleLight(bool on) {
+    return _firebaseService.setLight(aquariumId, on);
+  }
+
+  Future<void> togglePump(bool on) {
+    return _firebaseService.setPump(aquariumId, on);
+  }
+
   @override
   void dispose() {
     _sub?.cancel();

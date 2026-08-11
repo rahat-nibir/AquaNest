@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/aquarium_model.dart';
 import '../models/schedule_model.dart';
+import '../models/feeding_log_model.dart';
 
 /// Thin wrapper around Firebase so providers never talk to
 /// FirebaseFirestore/FirebaseAuth directly. Makes it trivial to
@@ -22,6 +23,11 @@ class FirebaseService {
 
   Future<void> signOut() => _auth.signOut();
 
+  Future<void> updateDisplayName(String name) async {
+    await _auth.currentUser?.updateDisplayName(name);
+    await _auth.currentUser?.reload();
+  }
+
   // ---------- Aquarium status ----------
 
   /// Live listener on aquariums/{aquariumId}. UI rebuilds automatically
@@ -39,6 +45,81 @@ class FirebaseService {
         .collection('aquariums')
         .doc(aquariumId)
         .set({'hubOnline': online}, SetOptions(merge: true));
+  }
+
+  // ---------- Feeding ----------
+
+  /// Requests an immediate feed. Uses the existing command pattern
+  /// (aquariums/{id}/commands, type: feed_now, status: pending) rather
+  /// than a boolean flag on the aquarium doc, so there's exactly one
+  /// mechanism for triggering a feed and no ambiguity about which write
+  /// the hub should treat as the source of truth.
+  Future<void> sendFeedCommand(String aquariumId) {
+    return _db.collection('aquariums').doc(aquariumId).collection('commands').add({
+      'type': 'feed_now',
+      'status': 'pending',
+      'requestedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// What actually happened, as reported back by the hub — separate from
+  /// the request in `commands`. Ordered newest-first.
+  Stream<List<FeedingLogEntry>> watchFeedingHistory(String aquariumId,
+      {int limit = 20}) {
+    return _db
+        .collection('aquariums')
+        .doc(aquariumId)
+        .collection('feedingHistory')
+        .orderBy('feedAt', descending: true)
+        .limit(limit)
+        .snapshots()
+        .map((snap) => snap.docs
+            .map((d) => FeedingLogEntry.fromFirestore(d.id, d.data()))
+            .toList());
+  }
+
+  /// Clears the missed-feedings badge once the human has seen it. Only
+  /// resets the counter — the individual 'missed' entries stay in
+  /// feedingHistory as a permanent record.
+  Future<void> acknowledgeMissedFeedings(String aquariumId) {
+    return _db
+        .collection('aquariums')
+        .doc(aquariumId)
+        .set({'missedFeedingsCount': 0}, SetOptions(merge: true));
+  }
+
+  // ---------- Maintenance ----------
+
+  /// Logs a water change as done right now. This is a human-reported
+  /// event (no sensor for it), so it's a simple timestamp write rather
+  /// than anything the hub confirms.
+  Future<void> recordWaterChange(String aquariumId) {
+    return _db.collection('aquariums').doc(aquariumId).set(
+      {'lastWaterChangeAt': FieldValue.serverTimestamp()},
+      SetOptions(merge: true),
+    );
+  }
+
+  // ---------- Hardware controls (light / pump relays) ----------
+
+  /// Writes the app's requested light state. The hub is expected to be
+  /// listening on this same aquarium doc and to actually flip its relay
+  /// to match — this write is the request, not proof the light changed.
+  /// isLightOn in the UI reflects whatever the hub last confirmed back,
+  /// once it echoes the field, so a relay fault won't silently show as
+  /// "on" forever.
+  Future<void> setLight(String aquariumId, bool on) {
+    return _db
+        .collection('aquariums')
+        .doc(aquariumId)
+        .set({'isLightOn': on}, SetOptions(merge: true));
+  }
+
+  Future<void> setPump(String aquariumId, bool on) {
+    return _db
+        .collection('aquariums')
+        .doc(aquariumId)
+        .set({'isPumpOn': on}, SetOptions(merge: true));
   }
 
   // ---------- Schedules ----------

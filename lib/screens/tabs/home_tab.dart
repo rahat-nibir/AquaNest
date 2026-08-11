@@ -1,8 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../providers/aquarium_provider.dart';
+import '../../providers/schedule_provider.dart';
+import '../../models/feeding_log_model.dart';
 
 const _kBackground = Color(0xFF030712);
 const _kCyan400 = Color(0xFF22D3EE);
@@ -21,18 +23,10 @@ TextStyle _mono(
 class HomeTab extends StatelessWidget {
   const HomeTab({super.key});
 
-  Future<void> _sendManualFeed(BuildContext context, String aquariumId) async {
+  Future<void> _sendManualFeed(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await FirebaseFirestore.instance
-          .collection('aquariums')
-          .doc(aquariumId)
-          .collection('commands')
-          .add({
-        'type': 'feed_now',
-        'status': 'pending',
-        'requestedAt': FieldValue.serverTimestamp(),
-      });
+      await context.read<AquariumProvider>().sendManualFeed();
       messenger.showSnackBar(
         const SnackBar(
           content:
@@ -46,10 +40,23 @@ class HomeTab extends StatelessWidget {
     }
   }
 
+  String _relativeDay(DateTime dt) {
+    final now = DateTime.now();
+    final diff = DateTime(now.year, now.month, now.day)
+        .difference(DateTime(dt.year, dt.month, dt.day))
+        .inDays;
+    if (diff == 0) return 'Today';
+    if (diff == 1) return 'Yesterday';
+    return '$diff days ago';
+  }
+
+  String _time(DateTime dt) => DateFormat.jm().format(dt);
+
   @override
   Widget build(BuildContext context) {
     final aquariumProvider = context.watch<AquariumProvider>();
     final aquarium = aquariumProvider.aquarium;
+    final feedingHistory = context.watch<ScheduleProvider>().feedingHistory;
 
     final bool notPaired = !aquarium.exists;
     final bool offline = aquarium.exists && !aquarium.hubOnline;
@@ -63,6 +70,16 @@ class HomeTab extends StatelessWidget {
     final String foodDisplay = aquarium.foodLevel == null
         ? '—'
         : '${aquarium.foodLevel!.toStringAsFixed(0)}%';
+    final String phDisplay =
+        aquarium.phLevel == null ? '—' : aquarium.phLevel!.toStringAsFixed(1);
+
+    // Water-change reminder: nudge at 7+ days since the last logged
+    // change, or if none has ever been logged for a paired, live tank.
+    final int? daysSinceWaterChange = aquarium.lastWaterChangeAt == null
+        ? null
+        : DateTime.now().difference(aquarium.lastWaterChangeAt!).inDays;
+    final bool waterChangeDue =
+        !notPaired && (daysSinceWaterChange == null || daysSinceWaterChange >= 7);
 
     // NOTE: this deliberately does NOT wrap in its own Scaffold — this
     // widget lives inside DashboardScreen's IndexedStack, which is
@@ -170,6 +187,92 @@ class HomeTab extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
               ],
+              if (!notPaired && aquarium.missedFeedingsCount > 0) ...[
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                        color: Colors.redAccent.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.report_problem_outlined,
+                          color: Colors.redAccent, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          aquarium.missedFeedingsCount == 1
+                              ? '1 scheduled feeding was missed.'
+                              : '${aquarium.missedFeedingsCount} scheduled feedings were missed.',
+                          style: GoogleFonts.outfit(
+                            color: Colors.redAccent,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => context
+                            .read<AquariumProvider>()
+                            .acknowledgeMissedFeedings(),
+                        child: Text('Dismiss',
+                            style: GoogleFonts.outfit(
+                              color: Colors.white70,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            )),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+              if (waterChangeDue) ...[
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: _kCyan500.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border:
+                        Border.all(color: _kCyan500.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.opacity_rounded,
+                          color: _kCyan400, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          daysSinceWaterChange == null
+                              ? 'No water change logged yet for this tank.'
+                              : 'Water change due — last one was $daysSinceWaterChange days ago.',
+                          style: GoogleFonts.outfit(
+                            color: _kCyan400,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => context
+                            .read<AquariumProvider>()
+                            .recordWaterChange(),
+                        child: Text('Mark done',
+                            style: GoogleFonts.outfit(
+                              color: Colors.white70,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            )),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
               // Water temperature — big glass card
               Container(
                 width: double.infinity,
@@ -232,13 +335,50 @@ class HomeTab extends StatelessWidget {
                       label: 'Food Level',
                     ),
                   ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _MetricCard(
+                      icon: Icons.science_outlined,
+                      iconColor: Colors.purple.shade300,
+                      value: phDisplay,
+                      label: 'pH Level',
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
+              if (!notPaired) ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: _HardwareToggleCard(
+                        icon: Icons.lightbulb_outline_rounded,
+                        label: 'Light',
+                        sublabel: aquarium.lightPhase == null
+                            ? null
+                            : aquarium.lightPhase!,
+                        value: aquarium.isLightOn,
+                        onChanged: (v) =>
+                            context.read<AquariumProvider>().toggleLight(v),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _HardwareToggleCard(
+                        icon: Icons.water_rounded,
+                        label: 'Pump',
+                        sublabel: null,
+                        value: aquarium.isPumpOn,
+                        onChanged: (v) =>
+                            context.read<AquariumProvider>().togglePump(v),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
               GestureDetector(
-                onTap: notPaired
-                    ? null
-                    : () => _sendManualFeed(context, aquarium.id),
+                onTap: notPaired ? null : () => _sendManualFeed(context),
                 child: Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
@@ -305,9 +445,166 @@ class HomeTab extends StatelessWidget {
                   ),
                 ),
               ),
+              if (!notPaired && feedingHistory.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                Text('Recent Feeding Activity',
+                    style: GoogleFonts.outfit(
+                      color: Colors.white70,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.3,
+                    )),
+                const SizedBox(height: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(20),
+                    border:
+                        Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                  ),
+                  child: Column(
+                    children: [
+                      for (int i = 0; i < feedingHistory.length; i++) ...[
+                        if (i > 0)
+                          Divider(
+                              height: 1,
+                              color: Colors.white.withValues(alpha: 0.06)),
+                        _FeedingHistoryTile(
+                          entry: feedingHistory[i],
+                          relativeDay: _relativeDay(feedingHistory[i].feedAt),
+                          time: _time(feedingHistory[i].feedAt),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _FeedingHistoryTile extends StatelessWidget {
+  final FeedingLogEntry entry;
+  final String relativeDay;
+  final String time;
+
+  const _FeedingHistoryTile({
+    required this.entry,
+    required this.relativeDay,
+    required this.time,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool missed = entry.isMissed;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: (missed ? Colors.redAccent : _kCyan500)
+                  .withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              missed ? Icons.close_rounded : Icons.check_rounded,
+              color: missed ? Colors.redAccent : _kCyan400,
+              size: 16,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  missed ? 'Missed feeding' : 'Fed successfully',
+                  style: GoogleFonts.outfit(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  entry.source == 'manual' ? 'Manual' : 'Scheduled',
+                  style: GoogleFonts.outfit(
+                    color: Colors.white38,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text('$relativeDay · $time',
+              style: GoogleFonts.outfit(color: Colors.white54, fontSize: 12)),
+        ],
+      ),
+    );
+  }
+}
+
+class _HardwareToggleCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String? sublabel;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _HardwareToggleCard({
+    required this.icon,
+    required this.label,
+    required this.sublabel,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: value
+              ? _kCyan400.withValues(alpha: 0.4)
+              : Colors.white.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: value ? _kCyan400 : Colors.white38, size: 22),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label,
+                    style: GoogleFonts.outfit(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600)),
+                Text(
+                  sublabel ?? (value ? 'On' : 'Off'),
+                  style: GoogleFonts.outfit(
+                      color: Colors.white54, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: _kCyan400,
+          ),
+        ],
       ),
     );
   }
