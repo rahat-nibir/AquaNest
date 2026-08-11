@@ -45,6 +45,19 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> signOut() => _firebaseService.signOut();
 
+  Future<bool> updateDisplayName(String name) async {
+    try {
+      await _firebaseService.updateDisplayName(name);
+      _user = _firebaseService.currentUser;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _authError = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
   @override
   void dispose() {
     _sub?.cancel();

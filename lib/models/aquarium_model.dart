@@ -19,6 +19,33 @@ class AquariumModel {
   final double? waterLevel;
   final double? foodLevel;
 
+  /// Null means no water change has ever been logged for this tank.
+  /// Written by AquariumProvider.recordWaterChange() when the human
+  /// taps "Mark water change done" — this is a human-logged event,
+  /// not something the ESP32 hub reports.
+  final DateTime? lastWaterChangeAt;
+
+  /// Count of scheduled feedings the hub expected to fire but never
+  /// confirmed (e.g. servo jammed, hub offline at feed time). Written
+  /// by the device/cloud side; the app only reads it and offers a way
+  /// to acknowledge/clear it via AquariumProvider.acknowledgeMissedFeedings().
+  final int missedFeedingsCount;
+
+  /// 0–14. Null until an analog pH probe is wired into the hub and
+  /// starts writing this field — same null-vs-0 rule as waterLevel.
+  final double? phLevel;
+
+  /// Written by the hub relay after it applies an app-requested toggle
+  /// (see AquariumProvider.toggleLight). Defaults to false so a
+  /// never-configured tank reads as "off", not "unknown".
+  final bool isLightOn;
+
+  /// e.g. "day" / "night" — set by the hub's own light schedule, not
+  /// the app. Null if the hub doesn't run a light schedule at all.
+  final String? lightPhase;
+
+  final bool isPumpOn;
+
   /// False only when the Firestore document itself doesn't exist yet
   /// (no device has ever been paired/provisioned). Different from
   /// hubOnline=false, which means the doc exists but the device hasn't
@@ -36,6 +63,12 @@ class AquariumModel {
     required this.esp32StreamUrl,
     this.waterLevel,
     this.foodLevel,
+    this.lastWaterChangeAt,
+    this.missedFeedingsCount = 0,
+    this.phLevel,
+    this.isLightOn = false,
+    this.lightPhase,
+    this.isPumpOn = false,
     this.exists = true,
   });
 
@@ -50,6 +83,12 @@ class AquariumModel {
       esp32StreamUrl: data['esp32StreamUrl'] ?? '',
       waterLevel: (data['waterLevel'] as num?)?.toDouble(),
       foodLevel: (data['foodLevel'] as num?)?.toDouble(),
+      lastWaterChangeAt: (data['lastWaterChangeAt'] as Timestamp?)?.toDate(),
+      missedFeedingsCount: (data['missedFeedingsCount'] as num?)?.toInt() ?? 0,
+      phLevel: (data['phLevel'] as num?)?.toDouble(),
+      isLightOn: data['isLightOn'] ?? false,
+      lightPhase: data['lightPhase'] as String?,
+      isPumpOn: data['isPumpOn'] ?? false,
       exists: true,
     );
   }
@@ -68,6 +107,12 @@ class AquariumModel {
       esp32StreamUrl: '',
       waterLevel: null,
       foodLevel: null,
+      lastWaterChangeAt: null,
+      missedFeedingsCount: 0,
+      phLevel: null,
+      isLightOn: false,
+      lightPhase: null,
+      isPumpOn: false,
       exists: false,
     );
   }

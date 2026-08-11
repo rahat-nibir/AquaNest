@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/schedule_model.dart';
+import '../models/feeding_log_model.dart';
 import '../services/firebase_service.dart';
 
 class ScheduleProvider extends ChangeNotifier {
@@ -12,6 +13,7 @@ class ScheduleProvider extends ChangeNotifier {
     required this.aquariumId,
   }) : _firebaseService = firebaseService {
     _subscribe();
+    _subscribeFeedingHistory();
   }
 
   List<ScheduleModel> _schedules = [];
@@ -20,12 +22,28 @@ class ScheduleProvider extends ChangeNotifier {
   bool _isLoading = true;
   bool get isLoading => _isLoading;
 
+  List<FeedingLogEntry> _feedingHistory = [];
+  List<FeedingLogEntry> get feedingHistory => _feedingHistory;
+
+  bool _feedingHistoryLoading = true;
+  bool get feedingHistoryLoading => _feedingHistoryLoading;
+
   StreamSubscription<List<ScheduleModel>>? _sub;
+  StreamSubscription<List<FeedingLogEntry>>? _feedingHistorySub;
 
   void _subscribe() {
     _sub = _firebaseService.watchSchedules(aquariumId).listen((data) {
       _schedules = data;
       _isLoading = false;
+      notifyListeners();
+    });
+  }
+
+  void _subscribeFeedingHistory() {
+    _feedingHistorySub =
+        _firebaseService.watchFeedingHistory(aquariumId).listen((data) {
+      _feedingHistory = data;
+      _feedingHistoryLoading = false;
       notifyListeners();
     });
   }
@@ -56,6 +74,7 @@ class ScheduleProvider extends ChangeNotifier {
   @override
   void dispose() {
     _sub?.cancel();
+    _feedingHistorySub?.cancel();
     super.dispose();
   }
 }
