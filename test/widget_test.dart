@@ -25,6 +25,6 @@ void main() {
   });
 
   test('AppColors.neonCyan matches the design system spec (#00E5FF)', () {
-    expect(AppColors.neonCyan.value, 0xFF00E5FF);
+    expect(AppColors.neonCyan.toARGB32(), 0xFF00E5FF);
   });
 }

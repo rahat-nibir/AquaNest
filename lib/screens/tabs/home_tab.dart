@@ -342,9 +342,7 @@ class HomeTab extends StatelessWidget {
                       child: _HardwareToggleCard(
                         icon: Icons.lightbulb_outline_rounded,
                         label: 'Light',
-                        sublabel: aquarium.lightPhase == null
-                            ? null
-                            : aquarium.lightPhase!,
+                        sublabel: aquarium.lightPhase,
                         value: aquarium.isLightOn,
                         onChanged: (v) =>
                             context.read<AquariumProvider>().toggleLight(v),
@@ -425,7 +423,7 @@ class HomeTab extends StatelessWidget {
                             height: 40,
                             decoration: const BoxDecoration(
                                 color: Colors.white, shape: BoxShape.circle),
-                            child: Icon(Icons.chevron_right,
+                            child: const Icon(Icons.chevron_right,
                                 color: _kBlue600, size: 22),
                           ),
                       ],
@@ -524,7 +522,7 @@ class _HardwareToggleCard extends StatelessWidget {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: _kCyan400,
+            activeThumbColor: _kCyan400,
           ),
         ],
       ),
