@@ -59,10 +59,7 @@ class _LoginScreenState extends State<LoginScreen>
 
     try {
       if (_isSignUp) {
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
+        await context.read<AuthProvider>().signUp(email, password);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -181,9 +178,10 @@ class _LoginScreenState extends State<LoginScreen>
                           if (!dialogFormKey.currentState!.validate()) return;
                           setDialogState(() => isSending = true);
                           try {
-                            await FirebaseAuth.instance.sendPasswordResetEmail(
-                              email: resetEmailController.text.trim(),
-                            );
+                            await context
+                                .read<AuthProvider>()
+                                .sendPasswordResetEmail(
+                                    resetEmailController.text.trim());
                             if (context.mounted) {
                               Navigator.pop(context);
                               ScaffoldMessenger.of(context).showSnackBar(

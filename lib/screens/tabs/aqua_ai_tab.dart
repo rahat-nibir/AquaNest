@@ -63,13 +63,21 @@ class _AquaAiTabState extends State<AquaAiTab> {
         ),
         Expanded(
           child: ListView.builder(
+            reverse: true,
             padding: const EdgeInsets.symmetric(horizontal: 20),
             itemCount: chatProvider.messages.length + (chatProvider.isTyping ? 1 : 0),
             itemBuilder: (context, index) {
-              if (index == chatProvider.messages.length) {
+              // reverse:true means index 0 renders at the bottom (newest),
+              // which is exactly where the typing indicator and latest
+              // message belong — this also gives free auto-scroll-to-
+              // -bottom behavior on new messages without a ScrollController.
+              if (chatProvider.isTyping && index == 0) {
                 return _buildTypingIndicator();
               }
-              final msg = chatProvider.messages[index];
+              final messageIndex = chatProvider.messages.length -
+                  1 -
+                  (index - (chatProvider.isTyping ? 1 : 0));
+              final msg = chatProvider.messages[messageIndex];
               return msg.sender == ChatSender.bot
                   ? _buildBotBubble(msg)
                   : _buildUserBubble(msg);

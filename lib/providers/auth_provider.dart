@@ -45,6 +45,17 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> signOut() => _firebaseService.signOut();
 
+  /// Rethrows FirebaseAuthException as-is so callers (login_screen) can
+  /// keep showing the exact error message — unlike signIn(), which
+  /// swallows the error into authError for a simpler bool-return UI.
+  Future<void> signUp(String email, String password) {
+    return _firebaseService.signUp(email, password);
+  }
+
+  Future<void> sendPasswordResetEmail(String email) {
+    return _firebaseService.sendPasswordResetEmail(email);
+  }
+
   Future<bool> updateDisplayName(String name) async {
     try {
       await _firebaseService.updateDisplayName(name);
