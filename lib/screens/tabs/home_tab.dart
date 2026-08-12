@@ -545,29 +545,41 @@ class _MetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 1,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: iconColor, size: 24),
-            const SizedBox(height: 8),
-            Text(value, style: _mono(size: 32, weight: FontWeight.w600)),
-            const SizedBox(height: 4),
-            Text(label,
+    // Content-sized (no AspectRatio) fixed the 3-cards-per-row squeeze,
+    // but that alone still assumes one specific text size. If the
+    // device has a larger system text-scale setting (accessibility
+    // "larger text"), the value/label render bigger than assumed and
+    // can overflow again on the exact same layout. Wrapping the value
+    // in FittedBox makes it shrink to fit instead of overflowing,
+    // regardless of text-scale factor or how narrow the card gets.
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: iconColor, size: 22),
+          const SizedBox(height: 6),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(value, style: _mono(size: 26, weight: FontWeight.w600)),
+          ),
+          const SizedBox(height: 3),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(label,
+                textAlign: TextAlign.center,
                 style: GoogleFonts.outfit(
                     color: Colors.white54,
                     fontSize: 12,
                     fontWeight: FontWeight.w500)),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
