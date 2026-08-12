@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/schedule_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/glass_card.dart';
+import '../../widgets/feeding_history_tile.dart';
 
 class ScheduleTab extends StatelessWidget {
   const ScheduleTab({super.key});
@@ -19,6 +20,83 @@ class ScheduleTab extends StatelessWidget {
           formattedTime,
           'Every day · Standard portion',
         );
+  }
+
+  void _showFeedHistorySheet(BuildContext context) {
+    final scheduleProvider = context.read<ScheduleProvider>();
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF0B182B),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.3,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (sheetContext, scrollController) {
+            return AnimatedBuilder(
+              animation: scheduleProvider,
+              builder: (context, _) {
+                final history = scheduleProvider.feedingHistory;
+                return Column(
+                  children: [
+                    const SizedBox(height: 12),
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+                      child: Row(
+                        children: [
+                          Text('Feed History Logs',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: scheduleProvider.feedingHistoryLoading
+                          ? const Center(
+                              child: CircularProgressIndicator(
+                                  color: AppColors.neonCyan))
+                          : history.isEmpty
+                              ? const Center(
+                                  child: Text('No feeding history yet.',
+                                      style: TextStyle(
+                                          color: Colors.white38,
+                                          fontSize: 13)))
+                              : ListView.separated(
+                                  controller: scrollController,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 20),
+                                  itemCount: history.length,
+                                  separatorBuilder: (_, __) => Divider(
+                                      height: 1,
+                                      color:
+                                          Colors.white.withValues(alpha: 0.06)),
+                                  itemBuilder: (context, index) =>
+                                      FeedingHistoryTile(entry: history[index]),
+                                ),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -118,14 +196,17 @@ class ScheduleTab extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              const Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('View Feed History Logs',
-                      style: TextStyle(color: Colors.white70, fontSize: 15)),
-                  Icon(Icons.arrow_forward_ios_rounded,
-                      color: AppColors.neonCyan, size: 16),
-                ],
+              GestureDetector(
+                onTap: () => _showFeedHistorySheet(context),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('View Feed History Logs',
+                        style: TextStyle(color: Colors.white70, fontSize: 15)),
+                    Icon(Icons.arrow_forward_ios_rounded,
+                        color: AppColors.neonCyan, size: 16),
+                  ],
+                ),
               ),
               const SizedBox(height: 100),
             ],

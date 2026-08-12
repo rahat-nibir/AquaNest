@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../providers/aquarium_provider.dart';
 import '../../providers/schedule_provider.dart';
-import '../../models/feeding_log_model.dart';
+import '../../widgets/feeding_history_tile.dart';
 
 const _kBackground = Color(0xFF030712);
 const _kCyan400 = Color(0xFF22D3EE);
@@ -40,17 +39,6 @@ class HomeTab extends StatelessWidget {
     }
   }
 
-  String _relativeDay(DateTime dt) {
-    final now = DateTime.now();
-    final diff = DateTime(now.year, now.month, now.day)
-        .difference(DateTime(dt.year, dt.month, dt.day))
-        .inDays;
-    if (diff == 0) return 'Today';
-    if (diff == 1) return 'Yesterday';
-    return '$diff days ago';
-  }
-
-  String _time(DateTime dt) => DateFormat.jm().format(dt);
 
   @override
   Widget build(BuildContext context) {
@@ -456,6 +444,7 @@ class HomeTab extends StatelessWidget {
                     )),
                 const SizedBox(height: 12),
                 Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(20),
@@ -469,11 +458,7 @@ class HomeTab extends StatelessWidget {
                           Divider(
                               height: 1,
                               color: Colors.white.withValues(alpha: 0.06)),
-                        _FeedingHistoryTile(
-                          entry: feedingHistory[i],
-                          relativeDay: _relativeDay(feedingHistory[i].feedAt),
-                          time: _time(feedingHistory[i].feedAt),
-                        ),
+                        FeedingHistoryTile(entry: feedingHistory[i]),
                       ],
                     ],
                   ),
@@ -482,69 +467,6 @@ class HomeTab extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _FeedingHistoryTile extends StatelessWidget {
-  final FeedingLogEntry entry;
-  final String relativeDay;
-  final String time;
-
-  const _FeedingHistoryTile({
-    required this.entry,
-    required this.relativeDay,
-    required this.time,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bool missed = entry.isMissed;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: (missed ? Colors.redAccent : _kCyan500)
-                  .withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              missed ? Icons.close_rounded : Icons.check_rounded,
-              color: missed ? Colors.redAccent : _kCyan400,
-              size: 16,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  missed ? 'Missed feeding' : 'Fed successfully',
-                  style: GoogleFonts.outfit(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Text(
-                  entry.source == 'manual' ? 'Manual' : 'Scheduled',
-                  style: GoogleFonts.outfit(
-                    color: Colors.white38,
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text('$relativeDay · $time',
-              style: GoogleFonts.outfit(color: Colors.white54, fontSize: 12)),
-        ],
       ),
     );
   }
