@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../models/chat_message_model.dart';
 import '../models/aquarium_model.dart';
+import '../models/feeding_log_model.dart';
 import '../services/gemini_service.dart';
 
 class ChatProvider extends ChangeNotifier {
@@ -31,7 +32,11 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> sendMessage(String text, {AquariumModel? aquariumContext}) async {
+  Future<void> sendMessage(
+    String text, {
+    AquariumModel? aquariumContext,
+    List<FeedingLogEntry>? feedingHistory,
+  }) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty || _isTyping) return;
 
@@ -43,6 +48,7 @@ class ChatProvider extends ChangeNotifier {
       final reply = await _geminiService.sendMessage(
         trimmed,
         context: aquariumContext,
+        feedingHistory: feedingHistory,
       );
       _messages.add(ChatMessageModel(sender: ChatSender.bot, text: reply));
     } catch (e) {

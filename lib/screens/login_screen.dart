@@ -3,14 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import '../providers/auth_provider.dart';
-
-// Design tokens pulled directly from the aquanest_fixed.html mockup.
-// (These duplicate a couple of values in app_theme.dart — if you want
-// one shared source of truth across the whole app, say so and I'll
-// fold these into AppColors instead of keeping them local here.)
-const _kBackground = Color(0xFF030712);
-const _kCyan400 = Color(0xFF22D3EE);
-const _kBlue600 = Color(0xFF2563EB);
+import '../theme/app_theme.dart';
+import '../widgets/aurora_background.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -70,7 +64,19 @@ class _LoginScreenState extends State<LoginScreen>
         }
       } else {
         final authProvider = context.read<AuthProvider>();
-        await authProvider.signIn(email, password);
+        final ok = await authProvider.signIn(email, password);
+        // signIn() returns false and stashes the message in authError
+        // instead of throwing — without checking the result here, a
+        // wrong password used to just... do nothing. No error, no
+        // shake, no snackbar. The form would sit there looking normal.
+        if (!ok && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(authProvider.authError ?? 'Sign in failed.'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
@@ -107,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen>
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: const Color(0xFF0B1120),
+              backgroundColor: AppColors.sheet,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
@@ -138,7 +144,7 @@ class _LoginScreenState extends State<LoginScreen>
                         labelText: 'Email',
                         labelStyle: const TextStyle(color: Colors.white60),
                         prefixIcon:
-                            const Icon(Icons.email_outlined, color: _kCyan400),
+                            const Icon(Icons.email_outlined, color: AppColors.cyan400),
                         filled: true,
                         fillColor: Colors.white.withValues(alpha: 0.05),
                         border: OutlineInputBorder(
@@ -167,7 +173,7 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _kCyan400,
+                    backgroundColor: AppColors.cyan400,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -286,13 +292,16 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _kBackground,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+      backgroundColor: AppColors.background,
+      body: Stack(
+        children: [
+          const Positioned.fill(child: AuroraBackground()),
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
               AnimatedBuilder(
                 animation: _glowController,
                 builder: (context, child) {
@@ -304,12 +313,12 @@ class _LoginScreenState extends State<LoginScreen>
                       gradient: const LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [_kCyan400, _kBlue600],
+                        colors: [AppColors.cyan400, AppColors.blue600],
                       ),
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: _kCyan400.withValues(alpha: 0.4),
+                          color: AppColors.cyan400.withValues(alpha: 0.4),
                           blurRadius: glow,
                           spreadRadius: 2,
                         ),
@@ -335,7 +344,7 @@ class _LoginScreenState extends State<LoginScreen>
                 _isSignUp ? 'Create a new account' : 'Total Aquarium Control',
                 style: GoogleFonts.outfit(
                   fontSize: 15,
-                  color: _kCyan400.withValues(alpha: 0.6),
+                  color: AppColors.cyan400.withValues(alpha: 0.6),
                 ),
               ),
               const SizedBox(height: 48),
@@ -406,7 +415,7 @@ class _LoginScreenState extends State<LoginScreen>
                           child: Text(
                             'Forgot password?',
                             style: GoogleFonts.outfit(
-                              color: _kCyan400,
+                              color: AppColors.cyan400,
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
                             ),
@@ -462,7 +471,7 @@ class _LoginScreenState extends State<LoginScreen>
                           child: Text(
                             _isSignUp ? 'Sign In' : 'Sign Up',
                             style: GoogleFonts.outfit(
-                              color: _kCyan400,
+                              color: AppColors.cyan400,
                               fontWeight: FontWeight.bold,
                               fontSize: 13,
                             ),
@@ -476,6 +485,8 @@ class _LoginScreenState extends State<LoginScreen>
             ],
           ),
         ),
+      ),
+        ],
       ),
     );
   }

@@ -32,6 +32,9 @@ dependencies:
   # Utilities
   intl: ^0.19.0
 
+  # Local push notifications for proactive feeding/water/AI-health alerts
+  flutter_local_notifications: ^18.0.1
+
   # Fonts
   google_fonts: ^6.2.1
 

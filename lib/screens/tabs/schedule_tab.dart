@@ -4,6 +4,8 @@ import '../../providers/schedule_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/feeding_history_tile.dart';
+import '../../widgets/empty_state.dart';
+import '../../widgets/tappable.dart';
 
 class ScheduleTab extends StatelessWidget {
   const ScheduleTab({super.key});
@@ -26,10 +28,10 @@ class ScheduleTab extends StatelessWidget {
     final scheduleProvider = context.read<ScheduleProvider>();
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: const Color(0xFF0B182B),
+      backgroundColor: AppColors.sheet,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
       ),
       builder: (sheetContext) {
         return DraggableScrollableSheet(
@@ -53,15 +55,11 @@ class ScheduleTab extends StatelessWidget {
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                    const Padding(
-                      padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
                       child: Row(
                         children: [
-                          Text('Feed History Logs',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold)),
+                          Text('Feed History Logs', style: AppText.cardTitle(size: 18)),
                         ],
                       ),
                     ),
@@ -69,13 +67,12 @@ class ScheduleTab extends StatelessWidget {
                       child: scheduleProvider.feedingHistoryLoading
                           ? const Center(
                               child: CircularProgressIndicator(
-                                  color: AppColors.neonCyan))
+                                  color: AppColors.cyan400))
                           : history.isEmpty
-                              ? const Center(
-                                  child: Text('No feeding history yet.',
-                                      style: TextStyle(
-                                          color: Colors.white38,
-                                          fontSize: 13)))
+                              ? const EmptyState(
+                                  icon: Icons.history_rounded,
+                                  title: 'No feeding history yet',
+                                )
                               : ListView.separated(
                                   controller: scrollController,
                                   padding: const EdgeInsets.symmetric(
@@ -104,35 +101,34 @@ class ScheduleTab extends StatelessWidget {
     return Consumer<ScheduleProvider>(
       builder: (context, scheduleProvider, _) {
         return SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xl, vertical: AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Schedule',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold)),
+              Text('Schedule', style: AppText.pageTitle()),
               const SizedBox(height: 4),
-              const Text('Automated feeding cycles',
-                  style: TextStyle(color: Colors.white54, fontSize: 14)),
-              const SizedBox(height: 24),
+              Text('Automated feeding cycles', style: AppText.pageSubtitle()),
+              const SizedBox(height: AppSpacing.xxl),
               if (scheduleProvider.isLoading)
                 const Padding(
                   padding: EdgeInsets.only(top: 20),
                   child: Center(
-                      child:
-                          CircularProgressIndicator(color: AppColors.neonCyan)),
+                      child: CircularProgressIndicator(color: AppColors.cyan400)),
                 )
               else if (scheduleProvider.schedules.isEmpty)
-                const Text('No feeding times set yet.',
-                    style: TextStyle(color: Colors.white38))
+                const EmptyState(
+                  icon: Icons.schedule_rounded,
+                  title: 'No feeding times set yet',
+                  subtitle: 'Add one below to automate feeding.',
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                )
               else
                 ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: scheduleProvider.schedules.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 16),
+                  separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.lg),
                   itemBuilder: (context, index) {
                     final item = scheduleProvider.schedules[index];
                     return GlassCard(
@@ -143,69 +139,67 @@ class ScheduleTab extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(item.time,
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 1)),
+                                  style: AppText.mono(size: 22, weight: FontWeight.w600)),
                               const SizedBox(height: 4),
                               Text(
                                 item.subtitle,
-                                style: TextStyle(
-                                    color: item.isActive
-                                        ? AppColors.neonCyan
-                                        : Colors.white38,
-                                    fontSize: 12),
+                                style: AppText.cardSubtitle(
+                                  color: item.isActive
+                                      ? AppColors.cyan400
+                                      : Colors.white38,
+                                ),
                               ),
                             ],
                           ),
                           Switch(
                             value: item.isActive,
-                            onChanged: (val) => scheduleProvider.toggleActive(
-                                item, val),
+                            onChanged: (val) =>
+                                scheduleProvider.toggleActive(item, val),
+                            activeThumbColor: AppColors.cyan400,
                           ),
                         ],
                       ),
                     );
                   },
                 ),
-              const SizedBox(height: 20),
-              GestureDetector(
+              const SizedBox(height: AppSpacing.xl),
+              Tappable(
                 onTap: () => _addNewSchedule(context),
+                borderRadius: BorderRadius.circular(18),
                 child: Container(
                   width: double.infinity,
                   height: 52,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                        color: AppColors.neonCyan.withValues(alpha: 0.4),
+                        color: AppColors.cyan400.withValues(alpha: 0.4),
                         width: 1.5),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.add, color: AppColors.neonCyan, size: 20),
-                      SizedBox(width: 8),
-                      Text('Add New Time',
-                          style: TextStyle(
-                              color: AppColors.neonCyan,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600)),
+                      const Icon(Icons.add, color: AppColors.cyan400, size: 20),
+                      const SizedBox(width: 8),
+                      Text('Add New Time', style: AppText.cardTitle(color: AppColors.cyan400)),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
-              GestureDetector(
+              const SizedBox(height: AppSpacing.xxl),
+              Tappable(
                 onTap: () => _showFeedHistorySheet(context),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('View Feed History Logs',
-                        style: TextStyle(color: Colors.white70, fontSize: 15)),
-                    Icon(Icons.arrow_forward_ios_rounded,
-                        color: AppColors.neonCyan, size: 16),
-                  ],
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('View Feed History Logs',
+                          style: AppText.body(color: Colors.white70, size: 15)),
+                      const Icon(Icons.arrow_forward_ios_rounded,
+                          color: AppColors.cyan400, size: 16),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 100),

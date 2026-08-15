@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Required on Android 13+ (API 33) to show local notifications for
+         proactive feeding/water/AI-health alerts. Runtime permission is
+         still requested via NotificationService.init() at startup. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
         android:label="aquanest"
         android:name="${applicationName}"
