@@ -42,8 +42,21 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  
+  # Package for generating the app launcher icons
+  flutter_launcher_icons: ^0.13.1 
 
 flutter:
   uses-material-design: true
   assets:
     - .env
+    - assets/icon.png
+    - assets/NameIcon2.png
+    - assets/aquaai.png
+
+# Launcher icon configuration (Must remain at the root level, no leading spaces)
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon.png"
+  min_sdk_android: 21

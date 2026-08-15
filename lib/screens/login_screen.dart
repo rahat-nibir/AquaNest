@@ -13,8 +13,7 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen>
-    with SingleTickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
@@ -23,23 +22,10 @@ class _LoginScreenState extends State<LoginScreen>
   bool _isLoading = false;
   bool _obscurePassword = true;
 
-  late final AnimationController _glowController;
-
-  @override
-  void initState() {
-    super.initState();
-    // Matches the mockup's "breathe-slow" CSS animation on the icon badge.
-    _glowController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat(reverse: true);
-  }
-
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _glowController.dispose();
     super.dispose();
   }
 
@@ -65,10 +51,8 @@ class _LoginScreenState extends State<LoginScreen>
       } else {
         final authProvider = context.read<AuthProvider>();
         final ok = await authProvider.signIn(email, password);
+
         // signIn() returns false and stashes the message in authError
-        // instead of throwing — without checking the result here, a
-        // wrong password used to just... do nothing. No error, no
-        // shake, no snackbar. The form would sit there looking normal.
         if (!ok && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -143,8 +127,8 @@ class _LoginScreenState extends State<LoginScreen>
                       decoration: InputDecoration(
                         labelText: 'Email',
                         labelStyle: const TextStyle(color: Colors.white60),
-                        prefixIcon:
-                            const Icon(Icons.email_outlined, color: AppColors.cyan400),
+                        prefixIcon: const Icon(Icons.email_outlined,
+                            color: AppColors.cyan400),
                         filled: true,
                         fillColor: Colors.white.withValues(alpha: 0.05),
                         border: OutlineInputBorder(
@@ -302,190 +286,166 @@ class _LoginScreenState extends State<LoginScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-              AnimatedBuilder(
-                animation: _glowController,
-                builder: (context, child) {
-                  final glow = 20 + (_glowController.value * 20);
-                  return Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [AppColors.cyan400, AppColors.blue600],
-                      ),
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.cyan400.withValues(alpha: 0.4),
-                          blurRadius: glow,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
-                    child: const Icon(Icons.set_meal_rounded,
-                        color: Colors.white, size: 36),
-                  );
-                },
-              ),
-              const SizedBox(height: 32),
-              Text(
-                'AquaNest',
-                style: GoogleFonts.outfit(
-                  fontSize: 40,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  letterSpacing: -0.5,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _isSignUp ? 'Create a new account' : 'Total Aquarium Control',
-                style: GoogleFonts.outfit(
-                  fontSize: 15,
-                  color: AppColors.cyan400.withValues(alpha: 0.6),
-                ),
-              ),
-              const SizedBox(height: 48),
-              Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.1)),
-                      ),
-                      child: Column(
-                        children: [
-                          _buildField(
-                            controller: _emailController,
-                            label: 'Email',
-                            keyboardType: TextInputType.emailAddress,
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Please enter your email';
-                              }
-                              if (!value.contains('@')) {
-                                return 'Enter a valid email address';
-                              }
-                              return null;
-                            },
+                  // Typographic logo image only
+                  Image.asset(
+                    'assets/NameIcon2.png',
+                    height: 55, // Adjusted height since it's the main focus now
+                    fit: BoxFit.contain,
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Tagline below the typographic logo
+                  // Text(
+                  //   _isSignUp
+                  //       ? 'Create a new account'
+                  //       : 'Your Aquarium, on Autopilot',
+                  //   style: GoogleFonts.outfit(
+                  //     fontSize: 15,
+                  //     color: AppColors.cyan400.withValues(alpha: 0.6),
+                  //   ),
+                  // ),
+                  ///const SizedBox(height: 48),
+
+                  // Form fields
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.1)),
                           ),
-                          const SizedBox(height: 8),
-                          _buildField(
-                            controller: _passwordController,
-                            label: 'Password',
-                            obscure: _obscurePassword,
-                            suffix: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                                color: Colors.white54,
-                                size: 18,
+                          child: Column(
+                            children: [
+                              _buildField(
+                                controller: _emailController,
+                                label: 'Email',
+                                keyboardType: TextInputType.emailAddress,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Please enter your email';
+                                  }
+                                  if (!value.contains('@')) {
+                                    return 'Enter a valid email address';
+                                  }
+                                  return null;
+                                },
                               ),
-                              onPressed: () => setState(
-                                  () => _obscurePassword = !_obscurePassword),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your password';
-                              }
-                              if (_isSignUp && value.length < 6) {
-                                return 'Password must be at least 6 characters';
-                              }
-                              return null;
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    if (!_isSignUp)
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: _showForgotPasswordDialog,
-                          child: Text(
-                            'Forgot password?',
-                            style: GoogleFonts.outfit(
-                              color: AppColors.cyan400,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
+                              const SizedBox(height: 8),
+                              _buildField(
+                                controller: _passwordController,
+                                label: 'Password',
+                                obscure: _obscurePassword,
+                                suffix: IconButton(
+                                  icon: Icon(
+                                    _obscurePassword
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
+                                    color: Colors.white54,
+                                    size: 18,
+                                  ),
+                                  onPressed: () => setState(() =>
+                                      _obscurePassword = !_obscurePassword),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your password';
+                                  }
+                                  if (_isSignUp && value.length < 6) {
+                                    return 'Password must be at least 6 characters';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _submitForm,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.black,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          elevation: 0,
-                          shadowColor: Colors.white.withValues(alpha: 0.2),
-                        ),
-                        child: _isLoading
-                            ? const CircularProgressIndicator(
-                                color: Colors.black)
-                            : Text(
-                                _isSignUp
-                                    ? 'Create Account'
-                                    : 'Access Dashboard',
+                        const SizedBox(height: 16),
+                        if (!_isSignUp)
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: _showForgotPasswordDialog,
+                              child: Text(
+                                'Forgot password?',
                                 style: GoogleFonts.outfit(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.cyan400,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          _isSignUp
-                              ? 'Already have an account? '
-                              : "Don't have an account? ",
-                          style: GoogleFonts.outfit(
-                              color: Colors.white60, fontSize: 13),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _isSignUp = !_isSignUp;
-                              _formKey.currentState?.reset();
-                            });
-                          },
-                          child: Text(
-                            _isSignUp ? 'Sign In' : 'Sign Up',
-                            style: GoogleFonts.outfit(
-                              color: AppColors.cyan400,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
                             ),
                           ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _submitForm,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              elevation: 0,
+                              shadowColor: Colors.white.withValues(alpha: 0.2),
+                            ),
+                            child: _isLoading
+                                ? const CircularProgressIndicator(
+                                    color: Colors.black)
+                                : Text(
+                                    _isSignUp
+                                        ? 'Create Account'
+                                        : 'Access Dashboard',
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              _isSignUp
+                                  ? 'Already have an account? '
+                                  : "Don't have an account? ",
+                              style: GoogleFonts.outfit(
+                                  color: Colors.white60, fontSize: 13),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _isSignUp = !_isSignUp;
+                                  _formKey.currentState?.reset();
+                                });
+                              },
+                              child: Text(
+                                _isSignUp ? 'Sign In' : 'Sign Up',
+                                style: GoogleFonts.outfit(
+                                  color: AppColors.cyan400,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
         ],
       ),
     );
