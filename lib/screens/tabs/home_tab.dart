@@ -79,50 +79,17 @@ class HomeTab extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // 1. Top Brand Header with Notification Bell
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  width: 10,
-                                  height: 10,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: isLive
-                                        ? AppColors.cyan500
-                                        : (notPaired
-                                            ? Colors.white24
-                                            : AppColors.amber400),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  isLive
-                                      ? 'ONLINE'
-                                      : (notPaired ? 'NOT PAIRED' : 'OFFLINE'),
-                                  style: GoogleFonts.outfit(
-                                    color: isLive
-                                        ? AppColors.cyan400
-                                        : (notPaired
-                                            ? Colors.white38
-                                            : AppColors.amber400),
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              aquarium.name,
-                              style: AppText.pageTitle(),
-                            ),
-                          ],
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4.0),
+                          child: Image.asset(
+                            'assets/NameIcon2.png',
+                            height: 24, // Optimized height for the top bar
+                            fit: BoxFit.contain,
+                          ),
                         ),
                         Tappable(
                           onTap: () => ScaffoldMessenger.of(context)
@@ -145,7 +112,54 @@ class HomeTab extends StatelessWidget {
                         ),
                       ],
                     ),
+
+                    const SizedBox(height: AppSpacing.xl),
+
+                    // 2. Status and Aquarium Name
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isLive
+                                    ? AppColors.cyan500
+                                    : (notPaired
+                                        ? Colors.white24
+                                        : AppColors.amber400),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              isLive
+                                  ? 'ONLINE'
+                                  : (notPaired ? 'NOT PAIRED' : 'OFFLINE'),
+                              style: GoogleFonts.outfit(
+                                color: isLive
+                                    ? AppColors.cyan400
+                                    : (notPaired
+                                        ? Colors.white38
+                                        : AppColors.amber400),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          aquarium.name,
+                          style: AppText.pageTitle(),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: AppSpacing.xxl),
+
                     if (notPaired || offline) ...[
                       Container(
                         padding: const EdgeInsets.symmetric(

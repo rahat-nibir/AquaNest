@@ -55,7 +55,12 @@ class _AquaAiTabState extends State<AquaAiTab> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Aqua AI', style: AppText.pageTitle()),
+                  // Custom typographic logo for the AI assistant
+                  Image.asset(
+                    'assets/aquaai.png',
+                    height: 24,
+                    fit: BoxFit.contain,
+                  ),
                   const SizedBox(height: 2),
                   Text('Smart Assistant',
                       style: AppText.body(color: AppColors.cyan400, size: 13)),
@@ -72,7 +77,8 @@ class _AquaAiTabState extends State<AquaAiTab> {
           child: ListView.builder(
             reverse: true,
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-            itemCount: chatProvider.messages.length + (chatProvider.isTyping ? 1 : 0),
+            itemCount:
+                chatProvider.messages.length + (chatProvider.isTyping ? 1 : 0),
             itemBuilder: (context, index) {
               // reverse:true means index 0 renders at the bottom (newest),
               // which is exactly where the typing indicator and latest
