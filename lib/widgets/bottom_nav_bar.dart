@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
 
 class AquaBottomNavBar extends StatelessWidget {
@@ -28,38 +29,55 @@ class AquaBottomNavBar extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(32),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
           child: Container(
             decoration: BoxDecoration(
               color: AppColors.navBar.withValues(alpha: 0.85),
               borderRadius: BorderRadius.circular(32),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              border: Border.all(color: AppColors.hairline),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: List.generate(_icons.length, (i) {
                 final isSelected = currentIndex == i;
-                return GestureDetector(
-                  onTap: () => onTap(i),
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: isSelected
-                        ? const BoxDecoration(
-                            color: AppColors.neonCyan,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.neonCyan,
-                                blurRadius: 10,
-                                spreadRadius: 1,
-                              ),
-                            ],
-                          )
-                        : null,
-                    child: Icon(
-                      _icons[i],
-                      color: isSelected ? Colors.black : Colors.white38,
-                      size: 22,
+                return Material(
+                  color: Colors.transparent,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: () {
+                      if (!isSelected) HapticFeedback.selectionClick();
+                      onTap(i);
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeOutCubic,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: isSelected ? AppColors.cyan400 : null,
+                        shape: BoxShape.circle,
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color:
+                                      AppColors.cyan400.withValues(alpha: 0.5),
+                                  blurRadius: 10,
+                                  spreadRadius: 1,
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 180),
+                        transitionBuilder: (child, anim) =>
+                            ScaleTransition(scale: anim, child: child),
+                        child: Icon(
+                          _icons[i],
+                          key: ValueKey(isSelected),
+                          color: isSelected ? Colors.black : Colors.white38,
+                          size: 22,
+                        ),
+                      ),
                     ),
                   ),
                 );
