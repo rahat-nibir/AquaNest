@@ -23,7 +23,7 @@ import 'screens/dashboard_screen.dart';
 
 /// Change this if you support multiple tanks per user — for a single
 /// university-project demo tank, a fixed ID keeps the plumbing simple.
-const String kDefaultAquariumId = 'living-room-reef';
+const String kDefaultAquariumId = 'device_01';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

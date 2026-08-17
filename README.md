@@ -25,7 +25,7 @@ flutter pub get
 5. Create the Firestore document your app reads on launch:
    ```
    Collection: aquariums
-   Document ID: living-room-reef   (matches kDefaultAquariumId in main.dart)
+   Document ID: device_01   (matches kDefaultAquariumId in main.dart)
    Fields:
      name            (string)   "Living Room Reef"
      temperatureC    (number)   26.5
@@ -38,7 +38,7 @@ flutter pub get
    `hubOnline` to this doc directly (e.g. via the Firebase REST API or an
    MQTT bridge) — that's what makes the Home tab "live."
 6. Schedules and snapshots are subcollections under that document
-   (`aquariums/living-room-reef/schedules`, `.../snapshots`) — the app
+   (`aquariums/device_01/schedules`, `.../snapshots`) — the app
    creates schedule entries itself via the "+ Add New Time" button, you
    don't need to seed those manually.
 
