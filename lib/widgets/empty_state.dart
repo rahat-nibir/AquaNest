@@ -1,54 +1,55 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
-/// Reusable placeholder shown when a list/tab has no data yet
-/// (e.g. no schedules, no feeding history, no snapshots).
-/// Keeps empty-state UI consistent across tabs instead of each
-/// screen inventing its own "nothing here" text.
+/// A consistent "nothing here yet" placeholder — replaces the various
+/// bare `Text('No X yet.')` lines that were scattered across tabs with
+/// no icon, no breathing room, and inconsistent fonts.
 class EmptyState extends StatelessWidget {
   final IconData icon;
   final String title;
-  final String subtitle;
+  final String? subtitle;
+  final EdgeInsetsGeometry padding;
 
   const EmptyState({
     super.key,
     required this.icon,
     required this.title,
-    required this.subtitle,
+    this.subtitle,
+    this.padding = const EdgeInsets.symmetric(vertical: 36),
   });
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 60),
+    return Padding(
+      padding: padding,
+      child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(18),
+              width: 56,
+              height: 56,
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.05),
                 shape: BoxShape.circle,
+                border: Border.all(color: AppColors.hairline),
               ),
-              child: Icon(icon, color: AppColors.neonCyan, size: 32),
+              child: Icon(icon, color: Colors.white24, size: 26),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+              style: AppText.cardSubtitle(color: Colors.white38, size: 13),
+            ),
+            if (subtitle != null) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                subtitle!,
+                textAlign: TextAlign.center,
+                style: AppText.cardSubtitle(color: Colors.white24, size: 12),
               ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white38, fontSize: 13),
-            ),
+            ],
           ],
         ),
       ),

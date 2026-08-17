@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/aquarium_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/glass_icon_button.dart';
+import '../../widgets/tappable.dart';
 
 class SettingsTab extends StatelessWidget {
   const SettingsTab({super.key});
@@ -21,19 +23,20 @@ class SettingsTab extends StatelessWidget {
     final result = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: const Color(0xFF0B182B),
-        title: const Text('Edit Profile', style: TextStyle(color: Colors.white)),
+        backgroundColor: AppColors.sheet,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+        title: Text('Edit Profile', style: AppText.cardTitle(size: 18)),
         content: TextField(
           controller: controller,
           autofocus: true,
-          style: const TextStyle(color: Colors.white),
+          style: AppText.body(),
           decoration: const InputDecoration(
             labelText: 'Display name',
             labelStyle: TextStyle(color: Colors.white54),
             enabledBorder: UnderlineInputBorder(
                 borderSide: BorderSide(color: Colors.white24)),
             focusedBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: AppColors.neonCyan)),
+                borderSide: BorderSide(color: AppColors.cyan400)),
           ),
         ),
         actions: [
@@ -43,7 +46,7 @@ class SettingsTab extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, controller.text.trim()),
-            child: const Text('Save', style: TextStyle(color: AppColors.neonCyan)),
+            child: const Text('Save', style: TextStyle(color: AppColors.cyan400)),
           ),
         ],
       ),
@@ -70,32 +73,32 @@ class SettingsTab extends StatelessWidget {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: const Color(0xFF0B182B),
-        title: const Text('Pair New Device',
-            style: TextStyle(color: Colors.white)),
+        backgroundColor: AppColors.sheet,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+        title: Text('Pair New Device', style: AppText.cardTitle(size: 18)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Multi-tank pairing isn\'t built yet — this app talks to a '
               'single fixed aquarium ID. To connect your ESP32 hub, flash '
               'it with this ID as its Firestore document path:',
-              style: TextStyle(color: Colors.white70, fontSize: 13),
+              style: AppText.body(color: Colors.white70, size: 13),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.neonCyan.withValues(alpha: 0.3)),
+                border: Border.all(color: AppColors.cyan400.withValues(alpha: 0.3)),
               ),
               child: SelectableText(
                 aquariumId,
                 style: const TextStyle(
-                    color: AppColors.neonCyan,
+                    color: AppColors.cyan400,
                     fontFamily: 'monospace',
                     fontSize: 14),
               ),
@@ -105,11 +108,43 @@ class SettingsTab extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Got it', style: TextStyle(color: AppColors.neonCyan)),
+            child: const Text('Got it', style: TextStyle(color: AppColors.cyan400)),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _confirmSignOut(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppColors.sheet,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+        title: Text('Sign Out?', style: AppText.cardTitle(size: 18)),
+        content: Text(
+          'You\'ll need to sign back in to control your aquarium from this device.',
+          style: AppText.body(color: Colors.white70, size: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Sign Out',
+                style: TextStyle(color: AppColors.statusRed, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+    await context.read<AuthProvider>().signOut();
+    if (context.mounted) {
+      Navigator.pushReplacementNamed(context, '/login');
+    }
   }
 
   @override
@@ -119,16 +154,13 @@ class SettingsTab extends StatelessWidget {
     final user = authProvider.user;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xl, vertical: AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Settings',
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold)),
-          const SizedBox(height: 20),
+          Text('Settings', style: AppText.pageTitle()),
+          const SizedBox(height: AppSpacing.xl),
           GlassCard(
             child: Row(
               children: [
@@ -141,10 +173,7 @@ class SettingsTab extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(_initials(user?.email),
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18)),
+                        style: AppText.cardTitle(size: 18)),
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -153,14 +182,10 @@ class SettingsTab extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(user?.displayName ?? 'AquaNest User',
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold)),
+                          style: AppText.cardTitle(size: 16)),
                       const SizedBox(height: 2),
                       Text(user?.email ?? 'Not signed in',
-                          style: const TextStyle(
-                              color: Colors.white54, fontSize: 13)),
+                          style: AppText.cardSubtitle(size: 13)),
                     ],
                   ),
                 ),
@@ -171,50 +196,39 @@ class SettingsTab extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 24),
-          const Text('DEVICE MANAGEMENT',
-              style: TextStyle(
-                  color: Colors.white38,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.8)),
-          const SizedBox(height: 12),
-          GestureDetector(
+          const SizedBox(height: AppSpacing.xxl),
+          Text('DEVICE MANAGEMENT', style: AppText.sectionLabel()),
+          const SizedBox(height: AppSpacing.md),
+          GlassCard(
             onTap: () => _showPairDeviceDialog(context),
-            child: GlassCard(
-              borderColor: AppColors.neonCyan.withValues(alpha: 0.3),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: const BoxDecoration(
-                        color: Color(0xFF0B182B), shape: BoxShape.circle),
-                    child: const Icon(Icons.bluetooth,
-                        color: AppColors.neonCyan, size: 20),
+            borderColor: AppColors.cyan400.withValues(alpha: 0.3),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: const BoxDecoration(
+                      color: AppColors.sheet, shape: BoxShape.circle),
+                  child: const Icon(Icons.bluetooth,
+                      color: AppColors.cyan400, size: 20),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Pair New Device',
+                          style: AppText.cardTitle(color: AppColors.cyan400)),
+                      const SizedBox(height: 2),
+                      Text('Connect Hub or ESP32', style: AppText.cardSubtitle()),
+                    ],
                   ),
-                  const SizedBox(width: 14),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Pair New Device',
-                            style: TextStyle(
-                                color: AppColors.neonCyan,
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold)),
-                        SizedBox(height: 2),
-                        Text('Connect Hub or ESP32',
-                            style: TextStyle(color: Colors.white38, fontSize: 12)),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.arrow_forward_ios_rounded,
-                      color: AppColors.neonCyan, size: 14),
-                ],
-              ),
+                ),
+                const Icon(Icons.arrow_forward_ios_rounded,
+                    color: AppColors.cyan400, size: 14),
+              ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           GlassCard(
             child: Row(
               children: [
@@ -231,11 +245,7 @@ class SettingsTab extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(aquarium.name,
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold)),
+                      Text(aquarium.name, style: AppText.cardTitle()),
                       const SizedBox(height: 2),
                       Row(
                         children: [
@@ -270,31 +280,73 @@ class SettingsTab extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 24),
-          GestureDetector(
-            onTap: () async {
-              await context.read<AuthProvider>().signOut();
-              if (context.mounted) {
-                Navigator.pushReplacementNamed(context, '/login');
-              }
+          const SizedBox(height: AppSpacing.xxl),
+          Text('PROACTIVE AI ALERTS', style: AppText.sectionLabel()),
+          const SizedBox(height: AppSpacing.md),
+          Consumer<SettingsProvider>(
+            builder: (context, settings, _) {
+              return GlassCard(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: (settings.proactiveAlertsEnabled
+                                ? AppColors.cyan400
+                                : Colors.white24)
+                            .withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.notifications_active_outlined,
+                        color: settings.proactiveAlertsEnabled
+                            ? AppColors.cyan400
+                            : Colors.white38,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Proactive Alerts', style: AppText.cardTitle()),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Push notifications for missed feedings, low water,\nand AI-detected fish health issues.',
+                            style: AppText.cardSubtitle(size: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: settings.proactiveAlertsEnabled,
+                      onChanged: settings.setProactiveAlertsEnabled,
+                      activeThumbColor: AppColors.cyan400,
+                    ),
+                  ],
+                ),
+              );
             },
+          ),
+          const SizedBox(height: AppSpacing.xxl),
+          Tappable(
+            onTap: () => _confirmSignOut(context),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 14),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(AppRadius.lg),
                 border: Border.all(color: AppColors.statusRed.withValues(alpha: 0.4)),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.logout_rounded, color: AppColors.statusRed, size: 18),
-                  SizedBox(width: 8),
+                  const Icon(Icons.logout_rounded, color: AppColors.statusRed, size: 18),
+                  const SizedBox(width: 8),
                   Text('Sign Out',
-                      style: TextStyle(
-                          color: AppColors.statusRed,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600)),
+                      style: AppText.cardTitle(color: AppColors.statusRed)),
                 ],
               ),
             ),
