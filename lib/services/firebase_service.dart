@@ -24,7 +24,8 @@ class FirebaseService {
   Future<void> signOut() => _auth.signOut();
 
   Future<void> signUp(String email, String password) {
-    return _auth.createUserWithEmailAndPassword(email: email, password: password);
+    return _auth.createUserWithEmailAndPassword(
+        email: email, password: password);
   }
 
   Future<void> sendPasswordResetEmail(String email) {
@@ -57,17 +58,24 @@ class FirebaseService {
 
   // ---------- Feeding ----------
 
-  /// Requests an immediate feed. Uses the existing command pattern
-  /// (aquariums/{id}/commands, type: feed_now, status: pending) rather
-  /// than a boolean flag on the aquarium doc, so there's exactly one
-  /// mechanism for triggering a feed and no ambiguity about which write
-  /// the hub should treat as the source of truth.
+  /// Requests an immediate feed.
+  ///
+  /// Was: adding a doc to aquariums/{id}/commands (type: feed_now,
+  /// status: pending) as a proper command-queue/audit-log pattern. Changed
+  /// to a plain boolean flag on the aquarium doc itself because the ESP32
+  /// firmware's Firebase library (mobizt/Firebase-ESP-Client) has no
+  /// Firestore query/listener support cheap enough to poll a subcollection
+  /// reliably under competition time pressure - it can only realistically
+  /// poll fields on a single known document path. This trades away the
+  /// per-request history the commands subcollection gave for something
+  /// the firmware can actually consume right now. The hub clears
+  /// feedRequested back to false itself right after reading it, so this
+  /// stays safe to call again for the next feed.
   Future<void> sendFeedCommand(String aquariumId) {
-    return _db.collection('aquariums').doc(aquariumId).collection('commands').add({
-      'type': 'feed_now',
-      'status': 'pending',
-      'requestedAt': FieldValue.serverTimestamp(),
-    });
+    return _db
+        .collection('aquariums')
+        .doc(aquariumId)
+        .set({'feedRequested': true}, SetOptions(merge: true));
   }
 
   /// What actually happened, as reported back by the hub — separate from
